@@ -127,6 +127,8 @@ int_pair get_normal(int_pair p1, int_pair p2)
     return {-p2.second / d, p2.first / d};
 }
 
+#if 0
+
 struct point_pair_hasher
 {
     size_t operator()(pair<int_pair, int_pair> &point_pair) const
@@ -393,82 +395,7 @@ vector<double> approximate_line(vector<DataPoint<>> &points, double epsilon, dou
     return {result_weight.first, result_weight.second, result_bias, double(min_distance) / double(sample_size)};
 }
 
-using Point = pair<double, double>;
-
-double area(Point &A, Point &B, Point &C)
-{
-    return abs(A.first * (B.second - C.second) + B.first * (C.second - A.second) + C.first * (A.second - B.second)) / 2.0;
-}
-
-bool intersect(Point &A, Point &B, Point &C, Point &P)
-{
-    double total_area = area(A, B, C);
-    double area1 = area(P, A, B);
-    double area2 = area(P, B, C);
-    double area3 = area(P, C, A);
-    return (total_area == area1 + area2 + area3);
-}
-
-bool test_triangle(vector<tuple<double, double, char>> &points, double epsilon) // tests if the dataset is a halfplane
-{
-    int sample_count = ceil(1 / epsilon);
-    vector<pair<double, double>> blacks, whites;
-    uniform_int_distribution<int> rand_index(0, points.size() - 1);
-    for (int i = 0; i < sample_count; i++)
-    {
-        int index = rand_index(gen);
-        auto &point = points[index];
-        if (get<2>(point) == black_pixel)
-            blacks.push_back(make_pair(get<0>(point), get<1>(point)));
-        else
-            whites.push_back(make_pair(get<0>(point), get<1>(point)));
-        if ((blacks.size() >= 1 and whites.size() >= 3) or (blacks.size() >= 3 and whites.size() >= 1))
-        {
-            vector<pair<double, double>> triangle;
-            pair<double, double> target;
-            if (blacks.size() > whites.size())
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    triangle.push_back(make_pair(get<0>(blacks.back()), get<1>(blacks.back())));
-                    blacks.pop_back();
-                }
-                target = make_pair(get<0>(whites.back()), get<1>(whites.back()));
-                whites.pop_back();
-            }
-            else
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    triangle.push_back(make_pair(get<0>(whites.back()), get<1>(whites.back())));
-                    whites.pop_back();
-                }
-                target = make_pair(get<0>(blacks.back()), get<1>(blacks.back()));
-                blacks.pop_back();
-            }
-            if (intersect(triangle[0], triangle[1], triangle[2], target))
-                return false;
-        }
-    }
-    return true;
-}
-
-vector<tuple<double, double, char>> generate_dataset(int n, double to_change)
-{
-    uniform_real_distribution<double> rand_coord(-1.0, 1.0);
-    vector<tuple<double, double, char>> points;
-    double angle = uniform_real_distribution<double>(0.0, double(2.0 * M_PI))(gen);
-    double w0 = cos(angle), w1 = sin(angle);
-    for (int i = 0; i < n; i++)
-    {
-        double x = rand_coord(gen), y = rand_coord(gen);
-        char label = ((x * w0 + y * w1 > 0) ? black_pixel : white_pixel);
-        if (abs(rand_coord(gen)) < to_change)
-            label = ((label == black_pixel) ? white_pixel : black_pixel);
-        points.push_back(make_tuple(x, y, label));
-    }
-    return move(points);
-}
+#endif
 
 template <typename T = double>
 struct Point2D
@@ -478,27 +405,20 @@ struct Point2D
 
     Point2D(T x = 0, T y = 0, char label = 0) : x(x), y(y), label(label) {}
 
-    Point2D operator+(const Point2D &other) { return Point2D(x + other.x, y + other.y, label); }
-    Point2D operator-(const Point2D &other) { return Point2D(x - other.x, y - other.y, label); }
-    T operator*(const Point2D &other) { return x * other.y - y * other.x; }
-    T operator%(const Point2D &other) { return x * other.x + y * other.y; }
-    int pos() { return !(y > 0 or (y == 0 and x > 0)); }
-    bool operator<(const Point2D &other) { return (x == other.x) ? y < other.y : x < other.x; }
-    bool operator==(const Point2D &other) { return x == other.x and y == other.y; }
+    Point2D operator+(const Point2D &other) const { return Point2D(x + other.x, y + other.y, label); }
+    Point2D operator-(const Point2D &other) const { return Point2D(x - other.x, y - other.y, label); }
+    T operator*(const Point2D &other) const { return x * other.y - y * other.x; }
+    T operator%(const Point2D &other) const { return x * other.x + y * other.y; }
+    int pos() const { return !(y > 0 or (y == 0 and x > 0)); }
+    bool operator<(const Point2D &other) const { return (x == other.x) ? y < other.y : x < other.x; }
+    bool operator==(const Point2D &other) const { return x == other.x and y == other.y; }
+    double l() const { return x * x + y * y; }
 
-    friend ostream &operator<<(ostream &out, const Point2D<T> &p) { return out << "(" << p.x << ", " << p.y << ", " << p.label ")"; }
+    friend ostream &operator<<(ostream &out, const Point2D<T> &p) { return out << "(" << p.x << ", " << p.y << ", " << p.label << ")"; }
     friend istream &operator>>(istream &in, const Point2D<T> &p) { return in >> p.x >> p.y >> p.label; }
 };
 
-template <typename T>
-bool operator<(const Point2D<T> &a, const Point2D<T> &b)
-{
-    if (a.y == b.y)
-        return a.x < b.x;
-    return a.y < b.y;
-}
-
-using pt = Point2D<long long>;
+using pt = Point2D<double>;
 using points = vector<pt>;
 
 void add(points &h, pt &p)
@@ -534,15 +454,14 @@ points hull(points s)
     return lower;
 }
 
-bool check(pt v, pt u)
-{
-    if (v.pos() == u.pos())
-        return v * u > 0;
-    return v.pos() < u.pos();
-}
-
 bool intersect(points &A, points &B)
 {
+    auto check = [](const pt &v, const pt &u)
+    {
+        if (v.pos() == u.pos())
+            return v * u > 0;
+        return v.pos() < u.pos();
+    };
     if (A.empty() || B.empty())
         return false;
     points V;
@@ -589,121 +508,6 @@ bool intersect(points &A, points &B)
     return true;
 }
 
-bool property_test(char *matrix[], int n, double epsilon) // tests if the image is a halfplane
-{
-    int sample_count = ceil(1 / epsilon);
-
-    points W, B;
-
-    uniform_int_distribution<int> rand_coord(0, n - 1);
-    for (int i = 0; i < sample_count; ++i)
-    {
-        int x = rand_coord(gen), y = rand_coord(gen);
-        if (matrix[x][y] == white_pixel)
-            W.push_back(pt(x, y));
-        else
-            B.push_back(pt(x, y));
-    }
-    // for (int x = 0; x < n; x++)
-    // {
-    //     for (int y = 0; y < n; y++)
-    //     {
-    //         if (find(W.begin(), W.end(), pt(x, y)) != W.end())
-    //             cout << white_pixel;
-    //         else if (find(B.begin(), B.end(), pt(x, y)) != B.end())
-    //             cout << black_pixel;
-    //         else
-    //             cout << " ";
-    //     }
-    //     cout << endl;
-    // }
-    W = hull(W);
-    B = hull(B);
-    return not intersect(W, B);
-}
-
-bool cmp(const point &a, const point &b)
-{
-    if (a.pos() == b.pos())
-        return a * b > 0 || (a * b == 0 && a.l() < b.l());
-    return a.pos() < b.pos();
-}
-
-bool check(const point &a, const point &b)
-{
-    double v = a * b;
-    return v > 0 || (v == 0 && (a % b > 0));
-}
-
-int main()
-{
-    ios_base::sync_with_stdio(0), cin.tie(0);
-    int n, A, B;
-    cin >> n;
-    vector<point> p(n);
-    int all = 0;
-    for (int i = 0; i < n; ++i)
-    {
-        char c;
-        cin >> p[i].x >> p[i].y >> c;
-        p[i].c = (c == '#');
-        all += p[i].c == 1;
-    }
-    int ans = n;
-    for (int l = 0; l < n; ++l)
-    {
-        vector<point> v = p;
-        int m = n - 1;
-        swap(v[m], v[l]);
-        for (int j = 0; j < m; ++j)
-            v[j] = v[j] - v[m];
-        sort(v.begin(), v.end() - 1, cmp);
-        /* for (int i = 0; i < m; ++i) { */
-        /*     cout << v[i].x << " " << v[i].y << '\n'; */
-        /* } */
-        /* cout << "___________\n"; */
-        int now = all;
-        now += (v[m].c == 0) - (v[m].c == 1);
-        for (int i = 0, j = -1; i < m; ++i)
-        {
-            j = max(j, i - 1);
-            if (i > 0 && v[i] * v[i - 1] == 0 && v[i] % v[i - 1] > 0)
-            {
-                now -= (v[i].c == 0) - (v[i].c == 1);
-                continue;
-            }
-            while (j + 2 - i <= m && check(v[i], v[(j + 1) % m]))
-            {
-                j++;
-                now += (v[j % m].c == 0) - (v[j % m].c == 1);
-            }
-            ans = min(ans, now);
-            ans = min(ans, n - now);
-            now -= (v[i].c == 0) - (v[i].c == 1);
-        }
-        now = all;
-        now += (v[m].c == 0) - (v[m].c == 1);
-        for (int i = 0, j = -1; i < m; ++i)
-        {
-            j = max(j, i - 1);
-            if (i > 0 && v[i] * v[i - 1] == 0 && v[i] % v[i - 1] > 0)
-            {
-                now -= (v[i].c == 0) - (v[i].c == 1);
-                continue;
-            }
-            while (j + 2 - i <= m && v[i] * v[(j + 1) % m] >= 0)
-            {
-                j++;
-                now += (v[j % m].c == 0) - (v[j % m].c == 1);
-            }
-            ans = min(ans, now);
-            ans = min(ans, n - now);
-            now -= (v[i].c == 0) - (v[i].c == 1);
-        }
-    }
-    cout << ans / double(n) << '\n';
-}
-
 bool test_convex_hull(vector<tuple<double, double, char>> &data_points, double epsilon) // tests if the image is a halfplane
 {
     int sample_count = ceil(1 / epsilon);
@@ -723,4 +527,79 @@ bool test_convex_hull(vector<tuple<double, double, char>> &data_points, double e
     W = hull(W);
     B = hull(B);
     return not intersect(W, B);
+}
+
+bool cmp(const pt &a, const pt &b)
+{
+    if (a.pos() == b.pos())
+        return a * b > 0 || (a * b == 0 && a.l() < b.l());
+    return a.pos() < b.pos();
+}
+
+bool check(const pt &a, const pt &b)
+{
+    double v = a * b;
+    return v > 0 || (v == 0 && (a % b > 0));
+}
+
+int epsilon_distance(points &data_points)
+{
+    cout << "S" << endl;
+    int n = data_points.size();
+    int all = 0;
+    cout << n << endl;
+    for (auto &elem : data_points)
+    {
+        cout << elem.label << endl;
+        all += elem.label;
+    }
+    int ans = n;
+    for (int l = 0; l < n; ++l)
+    {
+        points v = data_points;
+        int m = n - 1;
+        swap(v[m], v[l]);
+        for (int j = 0; j < m; ++j)
+            v[j] = v[j] - v[m];
+        sort(v.begin(), v.end() - 1, cmp);
+        int now = all;
+        now += (v[m].label == 0) - (v[m].label == 1);
+        for (int i = 0, j = -1; i < m; ++i)
+        {
+            j = max(j, i - 1);
+            if (i > 0 && v[i] * v[i - 1] == 0 && v[i] % v[i - 1] > 0)
+            {
+                now -= (v[i].label == 0) - (v[i].label == 1);
+                continue;
+            }
+            while (j + 2 - i <= m && check(v[i], v[(j + 1) % m]))
+            {
+                j++;
+                now += (v[j % m].label == 0) - (v[j % m].label == 1);
+            }
+            ans = min(ans, now);
+            ans = min(ans, n - now);
+            now -= (v[i].label == 0) - (v[i].label == 1);
+        }
+        now = all;
+        now += (v[m].label == 0) - (v[m].label == 1);
+        for (int i = 0, j = -1; i < m; ++i)
+        {
+            j = max(j, i - 1);
+            if (i > 0 && v[i] * v[i - 1] == 0 && v[i] % v[i - 1] > 0)
+            {
+                now -= (v[i].label == 0) - (v[i].label == 1);
+                continue;
+            }
+            while (j + 2 - i <= m && v[i] * v[(j + 1) % m] >= 0)
+            {
+                j++;
+                now += (v[j % m].label == 0) - (v[j % m].label == 1);
+            }
+            ans = min(ans, now);
+            ans = min(ans, n - now);
+            now -= (v[i].label == 0) - (v[i].label == 1);
+        }
+    }
+    return ans;
 }

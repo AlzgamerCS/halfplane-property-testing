@@ -4,26 +4,30 @@
 
 using namespace std;
 
-struct DataPoint {
+struct DataPoint
+{
     vector<double> features;
     double label;
 };
 
-struct SVMModel {
-    svm_model* model;
+struct SVMModel
+{
+    svm_model *model;
 };
 
-
-svm_problem createSVMProblem(const vector<DataPoint>& data) {
+svm_problem createSVMProblem(const vector<DataPoint> &data)
+{
     svm_problem prob;
     prob.l = data.size();
     prob.y = new double[prob.l];
-    prob.x = new svm_node*[prob.l];
+    prob.x = new svm_node *[prob.l];
 
-    for (int i = 0; i < prob.l; ++i) {
+    for (int i = 0; i < prob.l; ++i)
+    {
         prob.y[i] = data[i].label;
         prob.x[i] = new svm_node[data[i].features.size() + 1];
-        for (size_t j = 0; j < data[i].features.size(); ++j) {
+        for (size_t j = 0; j < data[i].features.size(); ++j)
+        {
             prob.x[i][j].index = j + 1;
             prob.x[i][j].value = data[i].features[j];
         }
@@ -33,16 +37,18 @@ svm_problem createSVMProblem(const vector<DataPoint>& data) {
     return prob;
 }
 
-void freeSVMProblem(svm_problem& prob) {
-    for (int i = 0; i < prob.l; ++i) {
+void freeSVMProblem(svm_problem &prob)
+{
+    for (int i = 0; i < prob.l; ++i)
+    {
         delete[] prob.x[i];
     }
     delete[] prob.x;
     delete[] prob.y;
 }
 
-
-void trainSVM(const vector<DataPoint>& data, SVMModel& model) {
+void trainSVM(const vector<DataPoint> &data, SVMModel &model)
+{
     svm_problem prob = createSVMProblem(data);
 
     svm_parameter param;
@@ -64,8 +70,9 @@ void trainSVM(const vector<DataPoint>& data, SVMModel& model) {
     param.weight_label = nullptr;
     param.weight = nullptr;
 
-    const char* error_msg = svm_check_parameter(&prob, &param);
-    if (error_msg) {
+    const char *error_msg = svm_check_parameter(&prob, &param);
+    if (error_msg)
+    {
         cerr << "Error: " << error_msg << endl;
         return;
     }
@@ -74,10 +81,11 @@ void trainSVM(const vector<DataPoint>& data, SVMModel& model) {
     freeSVMProblem(prob);
 }
 
-
-double predict(const SVMModel& model, const vector<double>& features) {
-    svm_node* x = new svm_node[features.size() + 1];
-    for (size_t i = 0; i < features.size(); ++i) {
+double predict(const SVMModel &model, const vector<double> &features)
+{
+    svm_node *x = new svm_node[features.size() + 1];
+    for (size_t i = 0; i < features.size(); ++i)
+    {
         x[i].index = i + 1;
         x[i].value = features[i];
     }
@@ -88,13 +96,12 @@ double predict(const SVMModel& model, const vector<double>& features) {
     return prediction;
 }
 
-
-int main() {
+int main()
+{
     // Example data
     vector<DataPoint> data = {
         {{2.0, 3.0}, 1},
-        {{1.0, 1.0}, -1}
-    };
+        {{1.0, 1.0}, -1}};
 
     SVMModel model;
     trainSVM(data, model);
@@ -107,10 +114,6 @@ int main() {
     svm_free_and_destroy_model(&model.model);
     return 0;
 }
-
-
-
-
 
 int main(int argc, char *argv[]) // "./approximate.exe" "file name" "C - parameter"
 {

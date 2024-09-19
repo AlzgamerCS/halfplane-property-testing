@@ -2,3 +2,4 @@ Images/
 Datasets/
 __pycache__/
 .vscode/
+*.exe
