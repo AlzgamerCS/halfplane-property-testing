@@ -1,25 +1,25 @@
 #pragma once
 
-#include <bits\stdc++.h>
-#include <format>
+// #include <bits\stdc++.h>
+// #include <format>
 
-// #include <iostream>
-// #include <iomanip>
-// #include <fstream>
-// #include <sstream>
-// #include <vector>
-// #include <string>
-// #include <algorithm>
-// #include <unordered_set>
-// #include <random>
-// #include <chrono>
-// #include <functional>
-// #include <cmath>
-// #include <math.h>
-// #include <numeric>
-// #include <climits>
-// #include <numbers>
-// #include <limits>
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <unordered_set>
+#include <random>
+#include <chrono>
+#include <functional>
+#include <cmath>
+#include <math.h>
+#include <numeric>
+#include <climits>
+#include <numbers>
+#include <limits>
 
 using namespace std;
 
@@ -35,8 +35,8 @@ mt19937_64 gen(seed);
 
 uniform_real_distribution<> random_frac(0.0, 1.0);
 
-char black_pixel = '#';
-char white_pixel = '.';
+char black_pixel = '#'; // 1 or true
+char white_pixel = '.'; // 0 or false
 
 template <typename T = double>
 struct DataPoint
@@ -267,8 +267,10 @@ int epsilon_distance(vector<DataPoint<>> &points) // Calculate epsilon distane o
     int dist = n;
     for (int i = 0; i < n; i++)
     {
-        for (int j = i + 1; j < n; j++)
+        for (int j = 0; j < n; j++)
         {
+            if(i == j)
+                continue;
             // cout << i << " " << j << endl;
             int black_left = 0, black_right = 0, white_left = 0, white_right = 0;
             auto &p1 = points[i], &p2 = points[j];
@@ -407,6 +409,16 @@ struct Point2D
 
     Point2D operator+(const Point2D &other) const { return Point2D(x + other.x, y + other.y, label); }
     Point2D operator-(const Point2D &other) const { return Point2D(x - other.x, y - other.y, label); }
+    void operator+=(const Point2D &other)
+    {
+        x += other.x;
+        y += other.y;
+    }
+    void operator-=(const Point2D &other)
+    {
+        x -= other.x;
+        y -= other.y;
+    }
     T operator*(const Point2D &other) const { return x * other.y - y * other.x; }
     T operator%(const Point2D &other) const { return x * other.x + y * other.y; }
     int pos() const { return !(y > 0 or (y == 0 and x > 0)); }
@@ -415,7 +427,7 @@ struct Point2D
     double l() const { return x * x + y * y; }
 
     friend ostream &operator<<(ostream &out, const Point2D<T> &p) { return out << "(" << p.x << ", " << p.y << ", " << p.label << ")"; }
-    friend istream &operator>>(istream &in, const Point2D<T> &p) { return in >> p.x >> p.y >> p.label; }
+    friend istream &operator>>(istream &in, Point2D<T> &p) { return in >> p.x >> p.y >> p.label; }
 };
 
 using pt = Point2D<double>;
@@ -544,15 +556,10 @@ bool check(const pt &a, const pt &b)
 
 int epsilon_distance(points &data_points)
 {
-    cout << "S" << endl;
     int n = data_points.size();
     int all = 0;
-    cout << n << endl;
     for (auto &elem : data_points)
-    {
-        cout << elem.label << endl;
         all += elem.label;
-    }
     int ans = n;
     for (int l = 0; l < n; ++l)
     {
@@ -603,3 +610,59 @@ int epsilon_distance(points &data_points)
     }
     return ans;
 }
+
+#if 0
+int epsilon_distance(points &data_points)
+{
+    int n = data_points.size();
+    int black_total = 0;
+    for (auto &elem : data_points)
+        if (elem.label)
+            black_total++;
+    int white_total = n - black_total;
+    int min_dist = n;
+    for (int i = 0; i < n; i++)
+    {
+        auto pivot = data_points[i];
+        auto get_angle = [&](pt p)
+        {
+            if (p == pivot)
+                return INF;
+            p -= pivot;
+            return atan2(p.y, p.x);
+        };
+        auto sorted_points = data_points;
+        sort(sorted_points.begin(), sorted_points.end(), [&](const pt &a, const pt &b)
+             { 
+                double angle1 = get_angle(a), angle2 = get_angle(b); 
+                if(angle1 < 0)
+                    angle1 += M_PI;
+                if(angle2 < 0)
+                    angle2 += M_PI;
+                return angle1 < angle2; });
+        sorted_points.pop_back();
+        int white_left = 0, black_left = 0;
+        pivot.label ? black_left++ : white_left++;
+        for (auto &elem : sorted_points)
+        {
+            if (get_angle(elem) >= 0)
+                elem.label ? black_left++ : white_left++;
+        }
+        min_dist = min({min_dist, black_left + white_total - white_left, white_left + black_total - black_left});
+        double prev_angle = 0;
+        for (auto &elem : sorted_points)
+        {
+            double angle = get_angle(elem);
+            if (angle == prev_angle)
+            {
+            }
+            else
+            {
+            }
+            prev_angle = angle;
+        }
+
+    }
+    return n;
+}
+#endif

@@ -24,10 +24,6 @@ struct point
             return 0;
         return 1;
     }
-
-    friend ostream &operator<<(ostream &out, const point &a) { return out << "(" << a.x << ", " << a.y << ", " << a.c << ")"; }
-
-    friend istream &operator>>(istream &in, point &a) { return in >> a.x >> a.y; }
 };
 
 bool cmp(const point &a, const point &b)
@@ -46,7 +42,7 @@ bool check(const point &a, const point &b)
 int main()
 {
     ios_base::sync_with_stdio(0), cin.tie(0);
-    int n, A, B;
+    int n;
     cin >> n;
     vector<point> p(n);
     int all = 0;
@@ -109,5 +105,5 @@ int main()
             now -= (v[i].c == 0) - (v[i].c == 1);
         }
     }
-    cout << ans / double(n) << '\n';
+    cout << ans << endl;
 }
